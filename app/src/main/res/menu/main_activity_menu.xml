@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:title="Graphs"/>
+    <item
+        android:title="Download Report">
+        <menu>
+            <item android:title="Last One Week"/>
+            <item android:title="Last Two Weeks"/>
+            <item android:title="Last One Month"/>
+            <item android:title="Last Two Months"/>
+        </menu>
+    </item>
+</menu>

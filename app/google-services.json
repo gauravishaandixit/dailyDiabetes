@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "208931774491",
+    "project_id": "dailydiabetes-9c828",
+    "storage_bucket": "dailydiabetes-9c828.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:208931774491:android:052ca1024e830b83bf98be",
+        "android_client_info": {
+          "package_name": "com.dailydiabetes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "208931774491-lus8r05h1ive3lb7nclau0ior8cpqcpl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3vR7waM0RF4ZZobp6nkaWtP7p4iNtahw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "208931774491-lus8r05h1ive3lb7nclau0ior8cpqcpl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">DailyDiabetes</string>
+    <string name="diabetes_value">Diabetes Value</string>
+    <string name="addnew">addNew</string>
+    <string-array name="time">
+        <item>Morning</item>
+        <item>Lunch</item>
+        <item>Night</item>
+    </string-array>
+</resources>
