@@ -1,4 +1,4 @@
-package com.dailydiabetes
+package com.dailydiabetes.ui
 
 import android.app.DatePickerDialog
 import android.content.Intent
@@ -13,9 +13,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.dailydiabetes.R
 import com.dailydiabetes.adapter.ShowAllAdapter
+import com.dailydiabetes.constant.Constants.Companion.TOPIC_NAME
 import com.dailydiabetes.model.DiabetesValue
-import com.dailydiabetes.ui.GraphActivity
+import com.dailydiabetes.model.NotificationData
+import com.dailydiabetes.model.PushNotification
+import com.dailydiabetes.retrofit.RetrofitInstance
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -26,10 +30,15 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.*
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -83,7 +92,7 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
                 (view.parent as ViewGroup).removeView(view)
 
             alertDialogBuilder.setView(view)
-            alertDialogBuilder.setCancelable(true)
+            alertDialogBuilder.setCancelable(false)
 
             alertDialog = alertDialogBuilder.create()
             alertDialog.show()
@@ -109,6 +118,14 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
             override fun onCancelled(error: DatabaseError) {
             }
         })
+
+        FirebaseMessaging.getInstance().subscribeToTopic(TOPIC_NAME).addOnCompleteListener {
+            Toast.makeText(
+                this,
+                "Subscribed to $TOPIC_NAME? ${it.isSuccessful}",
+                Toast.LENGTH_SHORT).show()
+            Log.i(TAG, "onCreate: subscribed? = ${it.isSuccessful}")
+        }
     }
 
     private fun initializeNewIssueLayout(): View {
@@ -138,6 +155,9 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
 
         saveValue.setOnClickListener {
             saveToFirebase(valueEditText.text.toString(), time)
+            valueEditText.text.clear()
+            datePicker.text = "Pick Date"
+            timeChipGroup.clearCheck()
         }
 
         cancel.setOnClickListener {
@@ -151,7 +171,6 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
     }
 
     private fun saveToFirebase(value: String, time: String) {
-        Log.i(TAG, "saveToFirebase: Value: $value, Time: $time")
         if(value.isNotEmpty() && time.isNotEmpty()) {
             var date = Calendar.getInstance().time
 
@@ -175,11 +194,9 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
             val diabetes = DiabetesValue(value.toInt(), time = time, date = currentTime)
 
             database.child(currentTime.toString()).setValue(diabetes).addOnSuccessListener {
-                Toast.makeText(
-                    this@MainActivity,
-                    "$value at $time on ${Date(currentTime).toLocaleString()} Saved!!!",
-                    Toast.LENGTH_SHORT
-                ).show()
+                val text = "$value at $time on ${Date(currentTime).toLocaleString()} Saved!!!"
+                Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+                sendMessageToFirebase(text)
                 alertDialog.dismiss()
             }
         }
@@ -254,10 +271,6 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
 
             Log.i(TAG, "createReport: $filePath")
 
-//            var filePath = Environment.getExternalStoragePublicDirectory(Environment
-//                .DIRECTORY_DOWNLOADS).absolutePath + "/" + Date() + ".csv"
-//            filePath = filePath.replace(" ", "_")
-
             val file = File(filePath)
 
             val bw = BufferedWriter(FileWriter(file, true))
@@ -281,6 +294,26 @@ class MainActivity : AppCompatActivity(), ShowAllAdapter.DiabetesValueClickListe
             bw.close()
         } catch (e: Exception) {
             Log.e(TAG, "createReport: $e")
+        }
+    }
+
+    private fun sendMessageToFirebase(text: String) {
+        Log.i(TAG, "sendMessageToFirebase: ")
+        val notification = PushNotification(
+            NotificationData("New Diabetes Value", text),
+            TOPIC_NAME
+        )
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = RetrofitInstance.api.postNotification(notification)
+                if(response.isSuccessful) {
+                    Log.d(TAG, "sendMessageToFirebase: Response is $response")
+                } else {
+                    Log.e(TAG, "sendMessageToFirebase: ${response.errorBody().toString()}")
+                }
+            } catch(e: Exception) {
+                Log.e(TAG, "sendMessageToFirebase: $e")
+            }
         }
     }
 }
